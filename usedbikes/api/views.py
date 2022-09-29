@@ -162,3 +162,16 @@ class OffersView(ViewSet):
             return Response(data=serializer.data)
         else:
             return Response({'msg': 'not found'})
+
+    def update(self, request, *args, **kwargs):
+        id = kwargs.get('pk')
+        offer = Offer.objects.get(id=id)
+        if offer.user == request.user:
+            serializer = OfferSerializer(instance=offer, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(data=serializer.data)
+            else:
+                return Response(data=serializer.errors)
+        else:
+            return Response(data={'msg': 'invalid user'})

@@ -37,9 +37,11 @@ class Offer(models.Model):
     )
     status = models.CharField(max_length=120, choices=options, default='pending')
 
-
+    def __str__(self):
+        return str(self.offer_price)
 class Sales(models.Model):
-    bike = models.ForeignKey(Bikes, on_delete=models.DO_NOTHING)
+    # bike = models.ForeignKey(Bikes, on_delete=models.DO_NOTHING)
+    bike = models.OneToOneField(Bikes, on_delete=models.DO_NOTHING)
     seller = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='s_user')
     buyer = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='b_user')
     sale_price = models.ForeignKey(Offer, on_delete=models.DO_NOTHING)

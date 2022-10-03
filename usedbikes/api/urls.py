@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 from api import views
 router = DefaultRouter()
 router.register('bikes', views.BikesView, basename='bikes')
-router.register('offers', views.OffersView, basename='offers')
+router.register('offers', views.BuyersView, basename='offers')
+router.register('review_offer', views.ReviewOfferRequestsView, basename='seller')
 
 urlpatterns = [
 

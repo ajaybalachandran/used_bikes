@@ -146,7 +146,7 @@ class BikesView(ModelViewSet):
             return Response(data={'msg': 'Bike not found'})
 
 
-class OffersView(ViewSet):
+class BuyersView(ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
@@ -170,8 +170,67 @@ class OffersView(ViewSet):
             serializer = OfferSerializer(instance=offer, data=request.data)
             if serializer.is_valid():
                 serializer.save()
+                offer.status = 'pending'
+                offer.save()
                 return Response(data=serializer.data)
             else:
                 return Response(data=serializer.errors)
         else:
             return Response(data={'msg': 'invalid user'})
+
+    def delete(self, request, *args, **kwargs):
+        id = kwargs.get('pk')
+        offer = Offer.objects.get(id=id)
+        if offer.user == request.user:
+            offer.delete()
+            return Response(data={'msg': 'Deleted'})
+        else:
+            return Response({'msg': 'invalid user login'})
+
+# this view is for seller users
+class ReviewOfferRequestsView(ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def retrieve(self, request, *args, **kwargs):
+        id = kwargs.get('pk')
+        offer = Offer.objects.get(id=id)
+        bike = offer.bike
+        seller = offer.bike.user
+        buyer = offer.user
+        if seller == request.user:
+            serializer = OfferSerializer(offer)
+            return Response(data=serializer.data)
+        else:
+            return Response(data={'msg': 'invalid user login'})
+
+    @action(methods=['POST'], detail=True)
+    def accept_offer(self, request, *args, **kwargs):
+        id = kwargs.get('pk')
+        offer = Offer.objects.get(id=id)
+        bike = offer.bike
+        remaining_offers = bike.offer_set.all().exclude(id=id)
+        seller = offer.bike.user
+        if request.user == seller:
+            offer.status = 'approved'
+            offer.save()
+            for ofr in remaining_offers:
+                ofr.status = 'cancelled'
+                ofr.save()
+            serializer = OfferSerializer(offer)
+            return Response(data=serializer.data)
+        else:
+            return Response(data={'msg': 'invalid user'})
+
+    @action(methods=['POST'], detail=True)
+    def cancel_offer(self, request, *args, **kwargs):
+        id = kwargs.get('pk')
+        offer = Offer.objects.get(id=id)
+        bike_owner = offer.bike.user
+        if request.user == bike_owner:
+            offer.status = 'cancelled'
+            offer.save()
+            cancelled_offer = Offer.objects.get(id=id)
+            serializer = OfferSerializer(cancelled_offer)
+            return Response(data=serializer.data)
+        else:
+            return Response(data={'msg': 'You have no access to this functionality'})

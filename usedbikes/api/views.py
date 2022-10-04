@@ -3,7 +3,7 @@ from rest_framework.viewsets import ViewSet, ModelViewSet
 from rest_framework.response import Response
 from api.models import Bikes, BikeImages, Offer, Sales
 from django.contrib.auth.models import User
-from api.serializers import UserSerializer, BikesSerializer, BikeImageSerializer, OfferSerializer
+from api.serializers import UserSerializer, BikesSerializer, BikeImageSerializer, OfferSerializer, SalesSerializer
 from rest_framework import permissions
 from rest_framework.decorators import action
 # Create your views here.
@@ -144,6 +144,38 @@ class BikesView(ModelViewSet):
                 return Response(data={'msg': 'Access denied'})
         else:
             return Response(data={'msg': 'Bike not found'})
+
+    # seller can mark their posts ad sold here
+    @action(methods=['POST'], detail=True)
+    def mark_as_sold(self, request, *args, **kwargs):
+        id = kwargs.get('pk')
+        bike = Bikes.objects.get(id=id)
+        seller = bike.user
+        approved_offer = bike.offer_set.get(status='approved')
+        buyer = approved_offer.user
+        sale_price = approved_offer.offer_price
+        remaining_offers = bike.offer_set.all().exclude(id=approved_offer.id)
+        if request.user == seller:
+            serializer = SalesSerializer(data=request.data, context={'bike': bike,
+                                                                     'seller': seller,
+                                                                     'buyer': buyer,
+                                                                     'sale_price': sale_price,
+                                                                     })
+            if serializer.is_valid():
+                serializer.save()
+                bike.is_active = False
+                bike.save()
+                for ofr in remaining_offers:
+                    ofr.status = 'sold-out'
+                    ofr.save()
+                approved_offer.status = 'you bought this product'
+                approved_offer.save()
+                return Response(data=serializer.data)
+            else:
+                return Response(data=serializer.errors)
+
+        else:
+            return Response(data='invalid user')
 
 
 class BuyersView(ViewSet):

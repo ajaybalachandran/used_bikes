@@ -33,7 +33,9 @@ class Offer(models.Model):
     options = (
         ('cancelled', 'cancelled'),
         ('approved', 'approved'),
-        ('pending', 'pending')
+        ('pending', 'pending'),
+        ('sold-out', 'sold-out'),
+        ('you bought this product', 'you bought this product')
     )
     status = models.CharField(max_length=120, choices=options, default='pending')
 
@@ -44,4 +46,9 @@ class Sales(models.Model):
     bike = models.OneToOneField(Bikes, on_delete=models.DO_NOTHING)
     seller = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='s_user')
     buyer = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='b_user')
-    sale_price = models.ForeignKey(Offer, on_delete=models.DO_NOTHING)
+    # sale_price = models.ForeignKey(Offer, on_delete=models.DO_NOTHING)
+    sale_price = models.PositiveIntegerField()
+    sale_date = models.DateTimeField(auto_now_add=True, null=True)
+
+    def __str__(self):
+        return self.bike.model

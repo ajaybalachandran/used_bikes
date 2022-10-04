@@ -1,14 +1,13 @@
 from django.shortcuts import render
 from rest_framework.viewsets import ViewSet, ModelViewSet
 from rest_framework.response import Response
-from api.models import Bikes, BikeImages, Offer, Sales
-from django.contrib.auth.models import User
+from api.models import Bikes, Offer, Sales
 from api.serializers import UserSerializer, BikesSerializer, BikeImageSerializer, OfferSerializer, SalesSerializer
 from rest_framework import permissions
 from rest_framework.decorators import action
-# Create your views here.
 
 
+# =========================== Users View =============================
 class UsersView(ViewSet):
     def create(self, request, *args, **kwargs):
         serializer = UserSerializer(data=request.data)
@@ -19,6 +18,7 @@ class UsersView(ViewSet):
             return Response(data=serializer.errors)
 
 
+# =========================== Bikes View =============================
 class BikesView(ModelViewSet):
     serializer_class = BikesSerializer
     queryset = Bikes.objects.all()
@@ -75,8 +75,6 @@ class BikesView(ModelViewSet):
         else:
             return Response(data='Invalid user')
 
-
-    # localhost:8000/usedbikes/bikes/{id}/add_images/
     # only post created user can add images, only 4 images are allowed
     @action(methods=['POST'], detail=True)
     def add_images(self, request, *args, **kwargs):
@@ -109,7 +107,6 @@ class BikesView(ModelViewSet):
             return Response(data={'msg': 'not found'})
 
     '''---------------------Buyer can make offers here--------------------------'''
-
     @action(methods=['POST'], detail=True)
     def make_offer(self, request, *args, **kwargs):
         id = kwargs.get('pk')
@@ -178,6 +175,7 @@ class BikesView(ModelViewSet):
             return Response(data='invalid user')
 
 
+# =========================== Buyers View =============================
 class BuyersView(ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -198,7 +196,7 @@ class BuyersView(ViewSet):
     def update(self, request, *args, **kwargs):
         id = kwargs.get('pk')
         offer = Offer.objects.get(id=id)
-        if offer.user == request.user:
+        if offer.user == request.user and offer.bike.is_active:
             serializer = OfferSerializer(instance=offer, data=request.data)
             if serializer.is_valid():
                 serializer.save()
@@ -208,7 +206,7 @@ class BuyersView(ViewSet):
             else:
                 return Response(data=serializer.errors)
         else:
-            return Response(data={'msg': 'invalid user'})
+            return Response(data={'msg': 'not allowed'})
 
     def delete(self, request, *args, **kwargs):
         id = kwargs.get('pk')
@@ -219,6 +217,8 @@ class BuyersView(ViewSet):
         else:
             return Response({'msg': 'invalid user login'})
 
+
+# =========================== Review Offer Requests View =============================
 # this view is for seller users
 class ReviewOfferRequestsView(ViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -268,6 +268,7 @@ class ReviewOfferRequestsView(ViewSet):
             return Response(data={'msg': 'You have no access to this functionality'})
 
 
+# =========================== Sales View =============================
 class SalesView(ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 

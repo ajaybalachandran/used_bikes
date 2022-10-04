@@ -266,3 +266,19 @@ class ReviewOfferRequestsView(ViewSet):
             return Response(data=serializer.data)
         else:
             return Response(data={'msg': 'You have no access to this functionality'})
+
+
+class SalesView(ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @action(methods=['GET'], detail=False)
+    def sold_bikes(self, request, *args, **kwargs):
+        bikes = Sales.objects.filter(seller=request.user)
+        serializer = SalesSerializer(bikes, many=True)
+        return Response(data=serializer.data)
+
+    @action(methods=['GET'], detail=False)
+    def bought_bikes(self, request, *args, **kwargs):
+        bikes = Sales.objects.filter(buyer=request.user)
+        serializer = SalesSerializer(bikes, many=True)
+        return Response(data=serializer.data)

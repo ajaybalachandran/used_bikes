@@ -153,11 +153,9 @@ class BikesView(ModelViewSet):
         sale_price = approved_offer.offer_price
         remaining_offers = bike.offer_set.all().exclude(id=approved_offer.id)
         if request.user == seller:
-            serializer = SalesSerializer(data=request.data, context={'bike': bike,
-                                                                     'seller': seller,
-                                                                     'buyer': buyer,
-                                                                     'sale_price': sale_price,
-                                                                     })
+            serializer = SalesSerializer(data=request.data,
+                                         context={'bike': bike, 'seller': seller,
+                                                  'buyer': buyer, 'sale_price': sale_price})
             if serializer.is_valid():
                 serializer.save()
                 bike.is_active = False

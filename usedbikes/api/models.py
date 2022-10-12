@@ -41,6 +41,8 @@ class Offer(models.Model):
 
     def __str__(self):
         return str(self.offer_price)
+
+
 class Sales(models.Model):
     # bike = models.ForeignKey(Bikes, on_delete=models.DO_NOTHING)
     bike = models.OneToOneField(Bikes, on_delete=models.DO_NOTHING)
